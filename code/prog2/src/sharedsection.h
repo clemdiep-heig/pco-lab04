@@ -28,8 +28,8 @@ public:
      * @brief SharedSection Constructeur de la classe qui représente la section partagée.
      * Initialisez vos éventuels attributs ici, sémaphores etc.
      */
-    SharedSection() {
-        // TODO
+    SharedSection(): blocking(0), mutex(1), locoAEntry(EntryPoint::EA), locoBEntry(EntryPoint::EA),
+        locoARequest(false), locoBRequest(false), occupied(false), isWaiting(false) {
     }
 
     /**
@@ -40,7 +40,20 @@ public:
      * @param entryPoint Le point d'entree de la locomotive qui fait l'appel
      */
     void request(Locomotive& loco, LocoId locoId, EntryPoint entryPoint) override {
-        // TODO
+        mutex.acquire();
+
+        switch(locoId) {
+            case LocoId::LA:
+                locoARequest = true;
+                locoAEntry = entryPoint;
+                break;
+            case LocoId::LB:
+                locoBRequest = true;
+                locoBEntry = entryPoint;
+                break;
+        }
+
+        mutex.release();
 
         // Exemple de message dans la console globale
         afficher_message(qPrintable(QString("The engine no. %1 requested the shared section.").arg(loco.numero())));
@@ -56,7 +69,30 @@ public:
      * @param locoId L'identidiant de la locomotive qui fait l'appel
      */
     void getAccess(Locomotive &loco, LocoId locoId) override {
-        // TODO
+
+        mutex.acquire();
+
+        if (!canAccess(locoId)) {
+            isWaiting = true;
+            mutex.release();
+
+            loco.arreter();
+            blocking.acquire();
+            loco.demarrer();
+        } else {
+            switch(locoId) {
+                case LocoId::LA:
+                    locoARequest = false;
+                    break;
+                case LocoId::LB:
+                    locoBRequest = false;
+                    break;
+            }
+
+            occupied = true;
+
+            mutex.release();
+        }
 
         // Exemple de message dans la console globale
         afficher_message(qPrintable(QString("The engine no. %1 accesses the shared section.").arg(loco.numero())));
@@ -69,7 +105,16 @@ public:
      * @param locoId L'identidiant de la locomotive qui fait l'appel
      */
     void leave(Locomotive& loco, LocoId locoId) override {
-        // TODO
+        mutex.acquire();
+
+        if (isWaiting) {
+            isWaiting = false;
+            locoBRequest = locoARequest = false;
+            blocking.release();
+        } else {
+            occupied = false;
+        }
+        mutex.release();
 
         // Exemple de message dans la console globale
         afficher_message(qPrintable(QString("The engine no. %1 leaves the shared section.").arg(loco.numero())));
@@ -78,8 +123,30 @@ public:
     /* A vous d'ajouter ce qu'il vous faut */
 
 private:
-    // Méthodes privées ...
-    // Attributes privés ...
+    PcoSemaphore blocking, mutex;
+    EntryPoint locoAEntry, locoBEntry;
+    bool locoARequest, locoBRequest, occupied, isWaiting;
+
+
+    bool canAccess(SharedSectionInterface::LocoId locoId) {
+        if (occupied) {
+            return false;
+        }
+
+        if (locoARequest && locoBRequest) {
+            if (locoId == SharedSectionInterface::LocoId::LA) {
+                if (locoAEntry != locoBEntry) {
+                    return false;
+                }
+            } else {
+                if (locoAEntry == locoBEntry) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 };
 
 

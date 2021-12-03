@@ -7,21 +7,29 @@
 #ifndef LOCOMOTIVEBEHAVIOR_H
 #define LOCOMOTIVEBEHAVIOR_H
 
+#include <vector>
 #include "locomotive.h"
 #include "launchable.h"
 #include "sharedsectioninterface.h"
+
+struct Section {
+    int contact;
+    std::vector<std::pair<int, int>> railToSwitch;
+    bool isShared;
+};
 
 /**
  * @brief La classe LocomotiveBehavior représente le comportement d'une locomotive
  */
 class LocomotiveBehavior : public Launchable
 {
+
 public:
     /*!
      * \brief locomotiveBehavior Constructeur de la classe
      * \param loco la locomotive dont on représente le comportement
      */
-    LocomotiveBehavior(Locomotive& loco, std::shared_ptr<SharedSectionInterface> sharedSection /*, autres paramètres éventuels */) : loco(loco), sharedSection(sharedSection) {
+    LocomotiveBehavior(Locomotive& loco, std::shared_ptr<SharedSectionInterface> sharedSection, std::vector<Section> travel) : loco(loco), sharedSection(sharedSection), travel(travel) {
         // Eventuel code supplémentaire du constructeur
     }
 
@@ -51,11 +59,22 @@ protected:
      */
     std::shared_ptr<SharedSectionInterface> sharedSection;
 
-    /*
-     * Vous êtes libres d'ajouter des méthodes ou attributs
-     *
-     * Par exemple la priorité ou le parcours
+    /**
+     * @brief All section of rail where the train go through.
+     * This must reprensent a complete turn on the maquet.
      */
+    std::vector<Section> travel;
+
+    /**
+     * @brief Follow the travel of the train and wait if needed on
+     * shared sections.
+     *
+     * @param begin First section on which the train will go.
+     * @param end Last section on which the train will go.
+     * @param isReverse Information to know if the train is going backward.
+     */
+    template<typename iterator>
+    void doTravel(iterator begin, iterator end, bool isReverse);
 };
 
 #endif // LOCOMOTIVEBEHAVIOR_H

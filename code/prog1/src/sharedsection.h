@@ -27,8 +27,7 @@ public:
      * @brief SharedSection Constructeur de la classe qui représente la section partagée.
      * Initialisez vos éventuels attributs ici, sémaphores etc.
      */
-    SharedSection() {
-        // TODO
+    SharedSection(): blocking(0), mutex(1), currentlyIn(-1), nbWaiting(0), occupied(false) {
     }
 
     /**
@@ -40,7 +39,29 @@ public:
      * @param loco La locomotive qui essaie accéder à la section partagée
      */
     void access(Locomotive &loco) override {
-        // TODO
+        mutex.acquire();
+
+        if (!occupied) {
+            // There is no locomotive on the shared section.
+            occupied = true;
+        } else if (currentlyIn == loco.numero()) {
+            // The locomotive currently on the shared section is me.
+            mutex.release();
+            return;
+        } else {
+            // Wait for shared section to be free.
+            ++nbWaiting;
+            mutex.release();
+
+            loco.arreter();
+            blocking.acquire();
+            // Mutex is get from the leaving locomotive.
+            loco.demarrer();
+        }
+
+        // Set current locomotive.
+        currentlyIn = loco.numero();
+        mutex.release();
 
         // Exemple de message dans la console globale
         afficher_message(qPrintable(QString("The engine no. %1 accesses the shared section.").arg(loco.numero())));
@@ -52,17 +73,34 @@ public:
      * @param loco La locomotive qui quitte la section partagée
      */
     void leave(Locomotive& loco) override {
-        // TODO
+        mutex.acquire();
+
+        // Only the locomotive currently on the shared section can leave.
+        if (!occupied || currentlyIn != loco.numero()) {
+            mutex.release();
+            return;
+        }
+
+        if (nbWaiting) {
+            // Liberate the waiting locomotive.
+            --nbWaiting;
+            blocking.release();
+            // mutex is passed to the accessing locomotive.
+        } else {
+            // Liberate the shared section.
+            occupied = false;
+            mutex.release();
+        }
 
         // Exemple de message dans la console globale
         afficher_message(qPrintable(QString("The engine no. %1 leaves the shared section.").arg(loco.numero())));
     }
 
-    /* A vous d'ajouter ce qu'il vous faut */
-
 private:
-    // Méthodes privées ...
-    // Attribut privés ...
+    PcoSemaphore blocking, mutex;
+    int currentlyIn;
+    unsigned nbWaiting;
+    bool occupied;
 };
 
 

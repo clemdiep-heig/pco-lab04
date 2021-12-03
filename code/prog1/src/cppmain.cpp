@@ -16,14 +16,17 @@
 // Laissez les numéros des locos à 0 et 1 pour ce laboratoire
 
 // Locomotive A
-static Locomotive locoA(7 /* Numéro (pour commande trains sur maquette réelle) */, 10 /* Vitesse */);
+static Locomotive locoA(6 /* Numéro (pour commande trains sur maquette réelle) */, 10 /* Vitesse */);
 // Locomotive B
-static Locomotive locoB(42 /* Numéro (pour commande trains sur maquette réelle) */, 12 /* Vitesse */);
+static Locomotive locoB(10 /* Numéro (pour commande trains sur maquette réelle) */, 5 /* Vitesse */);
 
 //Arret d'urgence
 void emergency_stop()
 {
-    // TODO
+    locoA.arreter();
+    locoA.eteindrePhares();
+    locoB.arreter();
+    locoB.eteindrePhares();
 
     afficher_message("\nSTOP!");
 }
@@ -35,19 +38,12 @@ int cmain()
     /************
      * Maquette *
      ************/
-
     //Choix de la maquette (A ou B)
     selection_maquette(MAQUETTE_A /*MAQUETTE_B*/);
 
     /**********************************
      * Initialisation des aiguillages *
      **********************************/
-
-    // Initialisation des aiguillages
-    // Positiion de base donnée comme exemple, vous pouvez la changer comme bon vous semble
-    // Vous devrez utiliser cette fonction pour la section partagée pour aiguiller les locos
-    // sur le bon parcours (par exemple à la sortie de la section partagée) vous pouvez l'
-    // appeler depuis vos thread des locos par ex.
     diriger_aiguillage(1,  TOUT_DROIT, 0);
     diriger_aiguillage(2,  DEVIE     , 0);
     diriger_aiguillage(3,  DEVIE     , 0);
@@ -56,7 +52,7 @@ int cmain()
     diriger_aiguillage(6,  TOUT_DROIT, 0);
     diriger_aiguillage(7,  TOUT_DROIT, 0);
     diriger_aiguillage(8,  DEVIE     , 0);
-    diriger_aiguillage(9,  DEVIE     , 0);
+    diriger_aiguillage(9,  TOUT_DROIT, 0);
     diriger_aiguillage(10, TOUT_DROIT, 0);
     diriger_aiguillage(11, TOUT_DROIT, 0);
     diriger_aiguillage(12, TOUT_DROIT, 0);
@@ -70,21 +66,52 @@ int cmain()
     diriger_aiguillage(20, DEVIE     , 0);
     diriger_aiguillage(21, DEVIE     , 0);
     diriger_aiguillage(22, TOUT_DROIT, 0);
-    diriger_aiguillage(23, TOUT_DROIT, 0);
+    diriger_aiguillage(23, DEVIE     , 0);
     diriger_aiguillage(24, TOUT_DROIT, 0);
-    // diriger_aiguillage(/*NUMERO*/, /*TOUT_DROIT | DEVIE*/, /*0*/);
 
     /********************************
      * Position de départ des locos *
      ********************************/
 
     // Loco 0
-    // Exemple de position de départ
-    locoA.fixerPosition(25, 32);
+    locoA.fixerPosition(9, 35);
 
     // Loco 1
-    // Exemple de position de départ
-    locoB.fixerPosition(22, 28);
+    locoB.fixerPosition(31, 1);
+
+    /*************************************
+     * Définitino des parcours des locos *
+     *************************************/
+    // Loco 0
+    std::vector<Section> travelA;
+    travelA.push_back({9, {
+        std::make_pair<int, int>(5, DEVIE),
+    }, false});
+
+    travelA.push_back({34, {
+        std::make_pair<int, int>(20, TOUT_DROIT),
+        std::make_pair<int, int>(19, DEVIE),
+        std::make_pair<int, int>(10, DEVIE),
+    }, true});
+
+    travelA.push_back({14, {
+        std::make_pair<int, int>(5, TOUT_DROIT),
+        std::make_pair<int, int>(20, DEVIE),
+    }, false});
+
+    travelA.push_back({35, {}, false});
+
+    // Loco 1
+    std::vector<Section> travelB;
+    travelB.push_back({31, {}, false});
+
+    travelB.push_back({30, {
+        std::make_pair<int, int>(19, TOUT_DROIT),
+        std::make_pair<int, int>(10, TOUT_DROIT),
+    }, true}),
+
+    travelB.push_back({11, {}, false});
+    travelB.push_back({1, {}, false});
 
     /***********
      * Message *
@@ -101,9 +128,9 @@ int cmain()
     std::shared_ptr<SharedSectionInterface> sharedSection = std::make_shared<SharedSection>();
 
     // Création du thread pour la loco 0
-    std::unique_ptr<Launchable> locoBehaveA = std::make_unique<LocomotiveBehavior>(locoA, sharedSection /*, autres paramètres ...*/);
+    std::unique_ptr<Launchable> locoBehaveA = std::make_unique<LocomotiveBehavior>(locoA, sharedSection, travelA);
     // Création du thread pour la loco 1
-    std::unique_ptr<Launchable> locoBehaveB = std::make_unique<LocomotiveBehavior>(locoB, sharedSection /*, autres paramètres ...*/);
+    std::unique_ptr<Launchable> locoBehaveB = std::make_unique<LocomotiveBehavior>(locoB, sharedSection, travelB);
 
     // Lanchement des threads
     afficher_message(qPrintable(QString("Lancement thread loco A (numéro %1)").arg(locoA.numero())));
