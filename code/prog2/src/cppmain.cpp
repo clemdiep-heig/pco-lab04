@@ -19,7 +19,7 @@
 // Locomotive A
 static Locomotive locoA(6 /* Numéro (pour commande trains sur maquette réelle) */, 10 /* Vitesse */);
 // Locomotive B
-static Locomotive locoB(10 /* Numéro (pour commande trains sur maquette réelle) */, 8 /* Vitesse */);
+static Locomotive locoB(10 /* Numéro (pour commande trains sur maquette réelle) */, 10 /* Vitesse */);
 
 //Arret d'urgence
 void emergency_stop()
@@ -97,10 +97,11 @@ int cmain()
         std::make_pair<int, int>(10, DEVIE),
     }, true});
 
-    travelA.push_back({14, {}, false});
-
-    travelA.push_back({7, {
+    travelA.push_back({14, {
         std::make_pair<int, int>(5, TOUT_DROIT),
+    }, false});
+
+    travelA.push_back({5, {
         std::make_pair<int, int>(20, DEVIE),
     }, false});
 
@@ -116,14 +117,13 @@ int cmain()
     }, true}),
 
     travelB.push_back({11, {}, false});
-    travelB.push_back({10, {}, false});
+    travelB.push_back({4, {}, false});
     travelB.push_back({1, {}, false});
 
     /***********
      * Message *
      **********/
 
-    // Affiche un message dans la console de l'application graphique
     afficher_message("Hit play to start the simulation...");
 
     /*********************

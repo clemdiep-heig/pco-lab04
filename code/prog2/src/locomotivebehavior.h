@@ -12,7 +12,7 @@
 #include "sharedsectioninterface.h"
 
 /**
- * @brief Repesent a section of rail with the first contact,
+ * @brief Represent a section of rail with the first contact,
  * the rail that have to be switch for the train to pass
  * and if it's a shared section.
  */
@@ -36,7 +36,6 @@ public:
      */
     LocomotiveBehavior(Locomotive& loco, std::shared_ptr<SharedSectionInterface> sharedSection, std::vector<Section> travel, LocoId locoId):
                                                                         loco(loco), sharedSection(sharedSection), travel(travel), locoId(locoId) {
-        // Eventuel code supplémentaire du constructeur
     }
 
 protected:
@@ -68,10 +67,14 @@ protected:
 
     /**
      * @brief All section of rail where the train go through.
-     * This must reprensent a complete turn on the maquet.
+     * This must represent a complete turn on the maquet.
+     * The first and the last section must not indicate a shared section.
      */
     std::vector<Section> travel;
 
+    /**
+     * @brief The id of the locomotive for the shared section.
+     */
     LocoId locoId;
 
     /**

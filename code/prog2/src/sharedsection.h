@@ -4,7 +4,6 @@
 // /_/   \___/\____/ /____/\___/____//_/   //
 //                                         //
 
-
 #ifndef SHAREDSECTION_H
 #define SHAREDSECTION_H
 
@@ -42,6 +41,7 @@ public:
     void request(Locomotive& loco, LocoId locoId, EntryPoint entryPoint) override {
         mutex.acquire();
 
+        // Save request information.
         switch(locoId) {
             case LocoId::LA:
                 locoARequest = true;
@@ -55,8 +55,11 @@ public:
 
         mutex.release();
 
-        // Exemple de message dans la console globale
-        afficher_message(qPrintable(QString("The engine no. %1 requested the shared section.").arg(loco.numero())));
+        afficher_message(qPrintable(QString("The engine no. %1 with id %2 requested the shared section from entry %3.")
+                                    .arg(loco.numero())
+                                    .arg(locoId == LocoId::LA ? "A" : "B")
+                                    .arg(entryPoint == EntryPoint::EA ? "A" : "B")
+        ));
     }
 
     /**
@@ -69,33 +72,39 @@ public:
      * @param locoId L'identidiant de la locomotive qui fait l'appel
      */
     void getAccess(Locomotive &loco, LocoId locoId) override {
-
         mutex.acquire();
 
         if (!canAccess(locoId)) {
+            // The locomotive hasn't access to the shared section
+            // it must wait until the section is free.
             isWaiting = true;
             mutex.release();
 
+            loco.afficherMessage("I can not access the section.");
             loco.arreter();
             blocking.acquire();
+            // The mutex is passed from the leaving loco.
             loco.demarrer();
         } else {
-            switch(locoId) {
-                case LocoId::LA:
-                    locoARequest = false;
-                    break;
-                case LocoId::LB:
-                    locoBRequest = false;
-                    break;
-            }
-
+            // The locomotive has access to the shared section,
+            // mark the section as occupied.
+            loco.afficherMessage("I can access the section.");
             occupied = true;
-
-            mutex.release();
         }
 
-        // Exemple de message dans la console globale
-        afficher_message(qPrintable(QString("The engine no. %1 accesses the shared section.").arg(loco.numero())));
+        // Remove the request.
+        switch(locoId) {
+            case LocoId::LA:
+                locoARequest = false;
+                break;
+            case LocoId::LB:
+                locoBRequest = false;
+                break;
+        }
+
+        mutex.release();
+
+        afficher_message(qPrintable(QString("The engine no. %1 with id %2 accesses the shared section.").arg(loco.numero()).arg(locoId == LocoId::LA ? "A" : "B")));
     }
 
     /**
@@ -108,19 +117,18 @@ public:
         mutex.acquire();
 
         if (isWaiting) {
+            // Liberate the loco that is currently waiting.
             isWaiting = false;
-            locoBRequest = locoARequest = false;
             blocking.release();
+            // The mutex is passed to the new accessing loco.
         } else {
+            // There is no more train on the shared section.
             occupied = false;
+            mutex.release();
         }
-        mutex.release();
 
-        // Exemple de message dans la console globale
-        afficher_message(qPrintable(QString("The engine no. %1 leaves the shared section.").arg(loco.numero())));
+        afficher_message(qPrintable(QString("The engine no. %1 with id %2 leaves the shared section.").arg(loco.numero()).arg(locoId == LocoId::LA ? "A" : "B")));
     }
-
-    /* A vous d'ajouter ce qu'il vous faut */
 
 private:
     PcoSemaphore blocking, mutex;
@@ -128,23 +136,32 @@ private:
     bool locoARequest, locoBRequest, occupied, isWaiting;
 
 
-    bool canAccess(SharedSectionInterface::LocoId locoId) {
+    /**
+     * @brief canAccess Determine if the given locomotive can access
+     * to the shared section.
+     *
+     * @param locoId The locomotive id that want to access.
+     * @return True is the access is granted, false otherwise.
+     */
+    bool canAccess(LocoId locoId) {
+        // If there is already a loco, the access is denied.
         if (occupied) {
             return false;
         }
 
+        // If the two locomotive requested the access, the authorization
+        // depends on which entry the two loco came in.
         if (locoARequest && locoBRequest) {
-            if (locoId == SharedSectionInterface::LocoId::LA) {
-                if (locoAEntry != locoBEntry) {
-                    return false;
-                }
+            if (locoId == LocoId::LA) {
+                // Access is granted to loco A when the two loco come from the same entry.
+                return locoAEntry == locoBEntry;
             } else {
-                if (locoAEntry == locoBEntry) {
-                    return false;
-                }
+                // Access is granted to loco B when the two loco come from different entry.
+                return locoAEntry != locoBEntry;
             }
         }
 
+        // The other loco hasn't requested access.
         return true;
     }
 };
