@@ -16,9 +16,9 @@
 // Laissez les numéros des locos à 0 et 1 pour ce laboratoire
 
 // Locomotive A
-static Locomotive locoA(6 /* Numéro (pour commande trains sur maquette réelle) */, 10 /* Vitesse */);
+static Locomotive locoA(15 /* Numéro (pour commande trains sur maquette réelle) */, 6 /* Vitesse */);
 // Locomotive B
-static Locomotive locoB(10 /* Numéro (pour commande trains sur maquette réelle) */, 5 /* Vitesse */);
+static Locomotive locoB(8 /* Numéro (pour commande trains sur maquette réelle) */, 6 /* Vitesse */);
 
 //Arret d'urgence
 void emergency_stop()
@@ -27,6 +27,8 @@ void emergency_stop()
     locoA.eteindrePhares();
     locoB.arreter();
     locoB.eteindrePhares();
+    locoA.fixerVitesse(0);
+    locoB.fixerVitesse(0);
 
     afficher_message("\nSTOP!");
 }

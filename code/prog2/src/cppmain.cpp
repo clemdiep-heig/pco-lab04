@@ -28,6 +28,8 @@ void emergency_stop()
     locoA.eteindrePhares();
     locoB.arreter();
     locoB.eteindrePhares();
+    locoA.fixerVitesse(0);
+    locoB.fixerVitesse(0);
 
     afficher_message("\nSTOP!");
 }

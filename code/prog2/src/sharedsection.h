@@ -80,7 +80,7 @@ public:
             isWaiting = true;
             mutex.release();
 
-            loco.afficherMessage("I can not access the section.");
+            loco.afficherMessage("I can't access the section.");
             loco.arreter();
             blocking.acquire();
             // The mutex is passed from the leaving loco.
