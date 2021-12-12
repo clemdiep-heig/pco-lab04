@@ -131,9 +131,25 @@ public:
     }
 
 private:
+    /**
+     * Semaphores use to synchronize between the thread and to block one if needed.
+     */
     PcoSemaphore blocking, mutex;
+
+    /**
+     * Entry point of the loco A and B for the request.
+     */
     EntryPoint locoAEntry, locoBEntry;
-    bool locoARequest, locoBRequest, occupied, isWaiting;
+
+    /**
+     * Boolean to know if loco A and/or B have request access.
+     */
+    bool locoARequest, locoBRequest;
+
+    /**
+     * Boolean to know if a loco is in the shared section and if the other is waiting the access.
+     */
+    bool occupied, isWaiting;
 
 
     /**

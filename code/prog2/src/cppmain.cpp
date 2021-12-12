@@ -83,7 +83,7 @@ int cmain()
     locoB.fixerPosition(31, 1);
 
     /*************************************
-     * Définitino des parcours des locos *
+     * Définition des parcours des locos *
      *************************************/
     // Loco 0
     std::vector<Section> travelA;

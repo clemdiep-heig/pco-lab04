@@ -56,7 +56,6 @@ void LocomotiveBehavior::doTravel(iterator begin, iterator end, bool isReverse) 
             }
         }
 
-
         // Change all train switches for needed orientation.
         for (auto itSwitch = current->railToSwitch.cbegin(); itSwitch != current->railToSwitch.cend(); ++itSwitch) {
             diriger_aiguillage(itSwitch->first, itSwitch->second, 0);
